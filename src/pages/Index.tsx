@@ -67,8 +67,8 @@ const Index = () => {
             <span className="text-sm font-medium text-accent">🇲🇾 Support Lokal</span>
           </div>
           <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground mb-4 animate-fade-in-up">
-            Discover Local
-            <span className="block text-accent">Fashion Brands</span>
+            Lokal-lah
+            <span className="block text-accent text-3xl md:text-4xl mt-2">Discover Local Fashion Brands</span>
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 animate-fade-in-up font-body" style={{ animationDelay: "0.15s" }}>
             Your go-to directory untuk cari brand baju lokal Malaysia yang best. Dari streetwear sampai batik moden.
@@ -204,11 +204,11 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h3 className="font-display text-2xl font-bold mb-2">LokalBrand.my</h3>
+          <h3 className="font-display text-2xl font-bold mb-2">Lokal-lah</h3>
           <p className="text-primary-foreground/70 text-sm">
             Directori brand baju lokal Malaysia 🇲🇾 • Support local, dress local
           </p>
-          <p className="text-primary-foreground/50 text-xs mt-4">© 2026 LokalBrand.my</p>
+          <p className="text-primary-foreground/50 text-xs mt-4">© 2026 Lokal-lah</p>
         </div>
       </footer>
 
