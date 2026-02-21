@@ -202,13 +202,9 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground py-12">
+      <footer className="bg-primary text-primary-foreground py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h3 className="font-display text-2xl font-bold mb-2">Lokal-lah</h3>
-          <p className="text-primary-foreground/70 text-sm">
-            Directori brand baju lokal Malaysia 🇲🇾 • Support local, dress local
-          </p>
-          <p className="text-primary-foreground/50 text-xs mt-4">© 2026 Lokal-lah</p>
+          <p className="text-primary-foreground/70 text-sm">© 2026 Lokal-lah</p>
         </div>
       </footer>
 
