@@ -61,11 +61,8 @@ const Index = () => {
           alt="Malaysian local fashion brands"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(var(--hero-overlay)/0.85)] via-[hsl(var(--hero-overlay)/0.6)] to-background" />
+        <div className="absolute inset-0 bg-[hsl(var(--hero-overlay)/0.75)]" />
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-accent/20 backdrop-blur-sm border border-accent/30 mb-6 animate-fade-in">
-            <span className="text-sm font-medium text-accent">🇲🇾 Support Lokal</span>
-          </div>
           <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground mb-4 animate-fade-in-up">
             Lokal-lah
             <span className="block text-accent text-3xl md:text-4xl mt-2">Discover Local Fashion Brands</span>

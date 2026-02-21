@@ -21,7 +21,7 @@ const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
       style={{ animationDelay: `${index * 0.06}s` }}
     >
       {/* Color accent bar */}
-      <div className="h-2 bg-gradient-to-r from-primary to-accent" />
+      <div className="h-2 bg-primary" />
 
       <div className="p-5">
         {/* Header */}

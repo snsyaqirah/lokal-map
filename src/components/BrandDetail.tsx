@@ -25,7 +25,7 @@ const BrandDetail = ({ brand, onClose }: BrandDetailProps) => {
         className="relative z-10 bg-background rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up shadow-2xl"
       >
         {/* Header gradient */}
-        <div className="h-3 bg-gradient-to-r from-primary to-accent rounded-t-3xl sm:rounded-t-2xl" />
+        <div className="h-3 bg-primary rounded-t-3xl sm:rounded-t-2xl" />
 
         <div className="p-6">
           {/* Close */}

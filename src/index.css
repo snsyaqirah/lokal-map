@@ -102,7 +102,7 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+    @apply text-primary;
   }
   .glass-card {
     @apply backdrop-blur-md bg-card/80 border border-border/50;
