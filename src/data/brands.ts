@@ -1,6 +1,20 @@
+export type Category = "clothing" | "local-service" | "home-bakery" | "cafe" | "photography" | "others";
+
+export interface Store {
+  id: string;
+  label: string; // e.g. "Flagship – Bangsar", "Outlet – Sunway Pyramid"
+  location: string;
+  address: string;
+  googleMapsUrl: string;
+  operatingHours: string;
+  contactWhatsApp?: string;
+  parkingInfo?: string;
+}
+
 export interface Brand {
   id: string;
   name: string;
+  category: Category;
   description: string;
   location: string;
   address: string;
@@ -19,24 +33,46 @@ export interface Brand {
   onlineStoreUrl?: string;
   onlineStorePlatform?: string;
   area: string;
+  stores?: Store[]; // for brands with multiple outlets
 }
 
-export const STYLE_TAGS = [
-  "Minimalist", "Streetwear", "Baju Kurung", "Vintage",
-  "Oversized", "Casual", "Smart Casual", "Activewear",
-  "Modest Wear", "Y2K", "Workwear", "Batik Modern"
+export const CATEGORIES = [
+  { id: "clothing" as Category, label: "Clothing", emoji: "👗", available: true },
+  { id: "local-service" as Category, label: "Local Service", emoji: "🎨", available: false },
+  { id: "home-bakery" as Category, label: "Home Bakery", emoji: "🧁", available: false },
+  { id: "cafe" as Category, label: "Cafe", emoji: "☕", available: false },
+  { id: "photography" as Category, label: "Photography", emoji: "📷", available: false },
+  { id: "others" as Category, label: "Others", emoji: "✨", available: false },
 ] as const;
 
-export const GENDER_OPTIONS = ["Men", "Women", "Unisex", "Kids"] as const;
+export const CATEGORY_FILTERS: Record<string, {
+  styleTags: readonly string[];
+  genderOptions: readonly string[];
+  areas: readonly string[];
+}> = {
+  clothing: {
+    styleTags: [
+      "Minimalist", "Streetwear", "Baju Kurung", "Vintage",
+      "Oversized", "Casual", "Smart Casual", "Activewear",
+      "Modest Wear", "Y2K", "Workwear", "Batik Modern",
+    ],
+    genderOptions: ["Men", "Women", "Unisex", "Kids"],
+    areas: [
+      "Kuala Lumpur", "Selangor", "Johor Bahru", "Penang",
+      "Melaka", "Pahang", "Kelantan", "Terengganu",
+    ],
+  },
+};
 
-export const AREAS = [
-  "Kuala Lumpur", "Selangor", "Johor Bahru", "Penang",
-  "Melaka", "Pahang", "Kelantan", "Terengganu"
-] as const;
+// kept for backwards compat
+export const STYLE_TAGS = CATEGORY_FILTERS.clothing.styleTags;
+export const GENDER_OPTIONS = CATEGORY_FILTERS.clothing.genderOptions;
+export const AREAS = CATEGORY_FILTERS.clothing.areas;
 
 export const brands: Brand[] = [
   {
     id: "1",
+    category: "clothing",
     name: "Pestle & Mortar Clothing",
     description: "Malaysian streetwear pioneer blending urban aesthetics with local identity. Known for bold graphics and quality basics.",
     location: "Bangsar, KL",
@@ -55,10 +91,32 @@ export const brands: Brand[] = [
     paymentMethods: ["QR Pay", "Card", "Cash"],
     onlineStoreUrl: "https://pestlemortar.com",
     onlineStorePlatform: "Website",
-    area: "Kuala Lumpur"
+    area: "Kuala Lumpur",
+    stores: [
+      {
+        id: "1-1",
+        label: "Flagship – Bangsar Village II",
+        location: "Bangsar, KL",
+        address: "Lot 1-03, Bangsar Village II, Jalan Telawi 1, Bangsar",
+        googleMapsUrl: "https://maps.google.com/?q=Pestle+Mortar+Clothing+Bangsar",
+        operatingHours: "10:00 AM - 9:00 PM",
+        contactWhatsApp: "60123456789",
+        parkingInfo: "Bangsar Village ada underground parking",
+      },
+      {
+        id: "1-2",
+        label: "Outlet – Pavilion KL",
+        location: "Bukit Bintang, KL",
+        address: "Lot 4.01, Level 4, Pavilion Kuala Lumpur",
+        googleMapsUrl: "https://maps.google.com/?q=Pestle+Mortar+Clothing+Pavilion+KL",
+        operatingHours: "10:00 AM - 10:00 PM",
+        parkingInfo: "Pavilion ada multi-level parking",
+      },
+    ],
   },
   {
     id: "2",
+    category: "clothing",
     name: "Nala Designs",
     description: "Artisanal batik brand known for contemporary prints on modern silhouettes. Every piece tells a story of Malaysian heritage.",
     location: "Publika, KL",
@@ -81,6 +139,7 @@ export const brands: Brand[] = [
   },
   {
     id: "3",
+    category: "clothing",
     name: "Kapten Batik",
     description: "Revolutionizing batik for the modern man. Premium batik shirts perfect for office or weekend brunch.",
     location: "KLCC, KL",
@@ -103,6 +162,7 @@ export const brands: Brand[] = [
   },
   {
     id: "4",
+    category: "clothing",
     name: "Oxwhite",
     description: "Direct-to-consumer basics brand offering premium quality at honest prices. Famous for their white shirts and polo tees.",
     location: "Petaling Jaya, Selangor",
@@ -125,6 +185,7 @@ export const brands: Brand[] = [
   },
   {
     id: "5",
+    category: "clothing",
     name: "Wak Doyok",
     description: "From grooming to fashion — Wak Doyok's clothing line brings rugged vintage charm with a Malaysian twist.",
     location: "Bangi, Selangor",
@@ -145,6 +206,7 @@ export const brands: Brand[] = [
   },
   {
     id: "6",
+    category: "clothing",
     name: "Vivy Yusof — dUCk",
     description: "Fashion-forward modest wear brand by Vivy Yusof. From scarves to ready-to-wear, dUCk is all about fun, feminine style.",
     location: "Pavilion KL",
@@ -163,10 +225,41 @@ export const brands: Brand[] = [
     paymentMethods: ["QR Pay", "Card", "Cash"],
     onlineStoreUrl: "https://theduck.co",
     onlineStorePlatform: "Website",
-    area: "Kuala Lumpur"
+    area: "Kuala Lumpur",
+    stores: [
+      {
+        id: "6-1",
+        label: "Flagship – Pavilion KL",
+        location: "Pavilion KL",
+        address: "Lot 3.02.01, Level 3, Pavilion Kuala Lumpur",
+        googleMapsUrl: "https://maps.google.com/?q=dUCk+Pavilion+KL",
+        operatingHours: "10:00 AM - 10:00 PM",
+        contactWhatsApp: "60181234567",
+        parkingInfo: "Pavilion ada multi-level parking, plan datang awal weekend",
+      },
+      {
+        id: "6-2",
+        label: "Outlet – Mid Valley",
+        location: "Mid Valley, KL",
+        address: "Lot 2.54, Level 2, Mid Valley Megamall",
+        googleMapsUrl: "https://maps.google.com/?q=dUCk+Mid+Valley",
+        operatingHours: "10:00 AM - 10:00 PM",
+        parkingInfo: "Mid Valley parking besar, weekend packed",
+      },
+      {
+        id: "6-3",
+        label: "Outlet – Sunway Pyramid",
+        location: "Sunway, Selangor",
+        address: "Lot LG2.106, Lower Ground 2, Sunway Pyramid",
+        googleMapsUrl: "https://maps.google.com/?q=dUCk+Sunway+Pyramid",
+        operatingHours: "10:00 AM - 10:00 PM",
+        parkingInfo: "Sunway Pyramid parking luas",
+      },
+    ],
   },
   {
     id: "7",
+    category: "clothing",
     name: "Masai",
     description: "Y2K-inspired streetwear for the youth. Bold colors, chunky silhouettes, and unapologetic self-expression.",
     location: "SS15 Subang Jaya",
@@ -188,6 +281,7 @@ export const brands: Brand[] = [
   },
   {
     id: "8",
+    category: "clothing",
     name: "Jelita Wardrobe",
     description: "Elegant baju kurung and kebaya with a modern twist. Perfect for Raya, nikah, or any special occasion.",
     location: "Shah Alam, Selangor",
@@ -210,6 +304,7 @@ export const brands: Brand[] = [
   },
   {
     id: "9",
+    category: "clothing",
     name: "Youthcraft Studio",
     description: "Underground streetwear collective creating limited drops with hand-drawn art. Each piece is a wearable canvas.",
     location: "George Town, Penang",
@@ -229,6 +324,7 @@ export const brands: Brand[] = [
   },
   {
     id: "10",
+    category: "clothing",
     name: "Lubna",
     description: "Modest fashion powerhouse with a global reach. Known for elegant cuts, earthy tones, and modest yet trendy designs.",
     location: "Mid Valley, KL",
