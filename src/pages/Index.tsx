@@ -64,7 +64,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-[hsl(var(--hero-overlay)/0.75)]" />
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
           <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground mb-4 animate-fade-in-up">
-            Lokal-lah
+            Lokal-Map
             <span className="block text-accent text-3xl md:text-4xl mt-2">Discover Local Fashion Brands</span>
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 animate-fade-in-up font-body" style={{ animationDelay: "0.15s" }}>
@@ -201,7 +201,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-primary-foreground/70 text-sm">© 2026 Lokal-lah</p>
+          <p className="text-primary-foreground/70 text-sm">© 2026 Lokal-Map</p>
         </div>
       </footer>
 
