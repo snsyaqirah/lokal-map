@@ -1,19 +1,22 @@
-import { MapPin, Clock } from "lucide-react";
-import type { Brand } from "@/data/brands";
+import { MapPin } from "lucide-react";
+import type { BrandWithDetails } from "@/lib/database.types";
 
 interface BrandCardProps {
-  brand: Brand;
+  brand: BrandWithDetails;
   index: number;
   onClick: () => void;
 }
 
-const priceColors: Record<string, string> = {
-  "$": "text-green-600",
-  "$$": "text-accent",
-  "$$$": "text-orange-600",
-};
-
 const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
+  const primaryLocation = brand.Locations[0];
+  const locationLabel = [primaryLocation?.city, primaryLocation?.state]
+    .filter(Boolean)
+    .join(", ");
+  const isMuslimFriendly = brand.Locations.some((l) => l.is_muslim_friendly);
+  const productTypes = [
+    ...new Set(brand.Products.map((p) => p.product_type).filter(Boolean)),
+  ] as string[];
+
   return (
     <button
       onClick={onClick}
@@ -28,53 +31,43 @@ const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
         <div className="flex items-start justify-between mb-3">
           <div>
             <h3 className="font-display text-lg font-bold group-hover:text-accent transition-colors">
-              {brand.name}
+              {brand.brand_name}
             </h3>
-            <div className="flex items-center gap-1 text-muted-foreground text-sm mt-0.5">
-              <MapPin className="w-3 h-3" />
-              {brand.location}
-            </div>
+            {locationLabel && (
+              <div className="flex items-center gap-1 text-muted-foreground text-sm mt-0.5">
+                <MapPin className="w-3 h-3" />
+                {locationLabel}
+              </div>
+            )}
           </div>
-          <span className={`font-display font-bold text-lg ${priceColors[brand.priceRange] || ""}`}>
-            {brand.priceRange}
-          </span>
+          {brand.Locations.length > 1 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium shrink-0">
+              {brand.Locations.length} lokasi
+            </span>
+          )}
         </div>
 
         {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{brand.description}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+          {brand.brand_description || "—"}
+        </p>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {brand.styleTags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="text-xs px-2 py-0.5 rounded-full bg-tag text-tag-foreground font-medium"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Bottom info */}
-        <div className="flex items-center justify-between pt-3 border-t border-border">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            {brand.operatingHours.split(" - ")[0]} - {brand.operatingHours.split(" - ")[1]?.split(" (")[0]}
-          </div>
-          <div className="flex gap-1">
-            {brand.genderCategory.map((g) => (
+        {/* Product type tags */}
+        {productTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {productTypes.slice(0, 3).map((tag) => (
               <span
-                key={g}
-                className="text-xs px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                key={tag}
+                className="text-xs px-2 py-0.5 rounded-full bg-tag text-tag-foreground font-medium"
               >
-                {g}
+                #{tag}
               </span>
             ))}
           </div>
-        </div>
+        )}
 
         {/* Muslim friendly badge */}
-        {brand.muslimFriendly && (
+        {isMuslimFriendly && (
           <div className="mt-3 flex items-center gap-1.5 text-xs text-primary font-medium">
             <span>☪</span> Muslim-Friendly
           </div>

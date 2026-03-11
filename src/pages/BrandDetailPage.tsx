@@ -1,19 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
-  MapPin, Clock, Phone, Car, CreditCard, ExternalLink,
+  MapPin, Clock, Phone, Car, CreditCard,
   Navigation, ShieldCheck, Calendar, ArrowLeft, Store,
-  MessageSquarePlus, Lock,
+  MessageSquarePlus, Lock, Package,
 } from "lucide-react";
-import { brands } from "@/data/brands";
-import type { Store as StoreType } from "@/data/brands";
+import { supabase } from "@/lib/supabase";
+import type { BrandWithDetails, DBLocation } from "@/lib/database.types";
+import { DAYS_OF_WEEK } from "@/lib/database.types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-
-const priceColors: Record<string, string> = {
-  "$": "text-green-600",
-  "$$": "text-accent",
-  "$$$": "text-orange-600",
-};
 
 const InfoRow = ({
   icon,
@@ -35,53 +31,119 @@ const InfoRow = ({
   </div>
 );
 
-// ── StoreCard ─────────────────────────────────────────────────────────────────
-
-const StoreCard = ({ store }: { store: StoreType }) => (
-  <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-    <div className="flex items-start justify-between gap-2">
-      <div>
-        <h4 className="font-display font-semibold text-base">{store.label}</h4>
-        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-          <MapPin className="w-3 h-3" /> {store.location}
-        </p>
-      </div>
-      <a
-        href={store.googleMapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-      >
-        <Navigation className="w-3 h-3" /> Navigate
-      </a>
-    </div>
-
-    <div className="text-sm text-muted-foreground">{store.address}</div>
-
-    <div className="flex flex-wrap gap-3 text-sm">
-      <span className="flex items-center gap-1 text-muted-foreground">
-        <Clock className="w-3.5 h-3.5" /> {store.operatingHours}
-      </span>
-      {store.contactWhatsApp && (
-        <a
-          href={`https://wa.me/${store.contactWhatsApp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:opacity-90 transition-opacity"
-        >
-          <Phone className="w-3 h-3" /> WhatsApp
-        </a>
+function OperationHours({ hours }: { hours: Record<string, string> | null }) {
+  if (!hours || Object.keys(hours).length === 0) {
+    return <p className="text-sm text-muted-foreground">—</p>;
+  }
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
+      {DAYS_OF_WEEK.map((day) =>
+        hours[day] ? (
+          <div key={day} className="flex justify-between gap-2">
+            <span className="capitalize text-muted-foreground">{day.slice(0, 3)}</span>
+            <span>{hours[day]}</span>
+          </div>
+        ) : null
       )}
     </div>
+  );
+}
 
-    {store.parkingInfo && (
-      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-        <Car className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-        {store.parkingInfo}
-      </p>
-    )}
-  </div>
-);
+// ── Location card ─────────────────────────────────────────────────────────────
+
+const LocationCard = ({ loc }: { loc: DBLocation }) => {
+  const address = [loc.lot_number, loc.street_address, loc.city, loc.postal_code, loc.state]
+    .filter(Boolean)
+    .join(", ");
+  const paymentList = loc.payment_methods
+    ? loc.payment_methods.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <InfoRow icon={<MapPin className="w-4 h-4" />} label="Alamat">
+        <p className="text-sm">{address || "—"}</p>
+        <div className="flex flex-wrap gap-2 mt-1.5">
+          {loc.googlemap_link && (
+            <a
+              href={loc.googlemap_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+            >
+              <Navigation className="w-3 h-3" /> Google Maps
+            </a>
+          )}
+          {loc.waze_link && (
+            <a
+              href={loc.waze_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500 text-white text-xs font-medium hover:opacity-90 transition-opacity"
+            >
+              <Navigation className="w-3 h-3" /> Waze
+            </a>
+          )}
+        </div>
+      </InfoRow>
+
+      {loc.operation_hours && Object.keys(loc.operation_hours).length > 0 && (
+        <InfoRow icon={<Clock className="w-4 h-4" />} label="Waktu Operasi">
+          <OperationHours hours={loc.operation_hours} />
+        </InfoRow>
+      )}
+
+      {loc.phone_number && (
+        <InfoRow icon={<Phone className="w-4 h-4" />} label="Hubungi">
+          <a
+            href={`https://wa.me/${loc.phone_number.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:opacity-90 transition-opacity"
+          >
+            <Phone className="w-3 h-3" /> WhatsApp
+          </a>
+        </InfoRow>
+      )}
+
+      {loc.parking_remarks && (
+        <InfoRow icon={<Car className="w-4 h-4" />} label="Parking">
+          <p className="text-sm">{loc.parking_remarks}</p>
+        </InfoRow>
+      )}
+
+      {paymentList.length > 0 && (
+        <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Payment">
+          <div className="flex flex-wrap gap-1.5 mt-0.5">
+            {paymentList.map((m) => (
+              <span key={m} className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                {m}
+              </span>
+            ))}
+          </div>
+        </InfoRow>
+      )}
+
+      {loc.is_muslim_friendly && (
+        <InfoRow icon={<ShieldCheck className="w-4 h-4" />} label="Muslim-Friendly">
+          <p className="text-sm text-primary font-medium">☪ Muslim-Friendly</p>
+        </InfoRow>
+      )}
+    </div>
+  );
+};
+
+// ── Data fetcher ──────────────────────────────────────────────────────────────
+
+async function fetchBrand(id: number): Promise<BrandWithDetails | null> {
+  const { data, error } = await supabase
+    .from("Brand")
+    .select("*, Locations(*), Products(*)")
+    .eq("brand_id", id)
+    .single();
+  if (error) return null;
+  return data as BrandWithDetails;
+}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -89,7 +151,19 @@ const BrandDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const brand = brands.find((b) => b.id === id);
+  const { data: brand, isLoading } = useQuery({
+    queryKey: ["brand", id],
+    queryFn: () => fetchBrand(Number(id)),
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
 
   if (!brand) {
     return (
@@ -105,7 +179,12 @@ const BrandDetailPage = () => {
     );
   }
 
-  const hasStores = brand.stores && brand.stores.length > 0;
+  const isMuslimFriendly = brand.Locations.some((l) => l.is_muslim_friendly);
+  const lastUpdated = brand.Locations.reduce<string | null>((acc, l) => {
+    if (!l.updated_at) return acc;
+    if (!acc || l.updated_at > acc) return l.updated_at;
+    return acc;
+  }, null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +199,7 @@ const BrandDetailPage = () => {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="font-display font-bold text-sm truncate">{brand.name}</p>
+            <p className="font-display font-bold text-sm truncate">{brand.brand_name}</p>
           </div>
         </div>
       </div>
@@ -129,35 +208,19 @@ const BrandDetailPage = () => {
 
         {/* ── Brand header ──────────────────────────────── */}
         <section>
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold">{brand.name}</h1>
-              {!hasStores && (
-                <p className="flex items-center gap-1.5 text-muted-foreground text-sm mt-1">
-                  <MapPin className="w-3.5 h-3.5" /> {brand.location}
-                </p>
-              )}
-            </div>
-            <span className={`font-display font-bold text-2xl shrink-0 ${priceColors[brand.priceRange] || ""}`}>
-              {brand.priceRange}
-            </span>
-          </div>
+          <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{brand.brand_name}</h1>
 
-          <p className="text-muted-foreground mb-4 leading-relaxed">{brand.description}</p>
+          {brand.brand_description && (
+            <p className="text-muted-foreground leading-relaxed mb-4">{brand.brand_description}</p>
+          )}
 
-          {/* Style + gender tags */}
           <div className="flex flex-wrap gap-1.5">
-            {brand.styleTags.map((tag) => (
-              <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-tag text-tag-foreground font-medium">
-                {tag}
+            {brand.Products.map((p) => p.product_type).filter(Boolean).map((type) => (
+              <span key={type} className="text-xs px-2.5 py-1 rounded-full bg-tag text-tag-foreground font-medium">
+                {type}
               </span>
             ))}
-            {brand.genderCategory.map((g) => (
-              <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
-                {g}
-              </span>
-            ))}
-            {brand.muslimFriendly && (
+            {isMuslimFriendly && (
               <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
                 ☪ Muslim-Friendly
               </span>
@@ -165,94 +228,48 @@ const BrandDetailPage = () => {
           </div>
         </section>
 
-        {/* ── Store locations ────────────────────────────── */}
-        {hasStores ? (
+        {/* ── Locations ─────────────────────────────────── */}
+        {brand.Locations.length > 0 && (
           <section>
             <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2">
-              <Store className="w-5 h-5" /> Lokasi Store ({brand.stores!.length})
+              <Store className="w-5 h-5" /> Lokasi ({brand.Locations.length})
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {brand.stores!.map((store) => (
-                <StoreCard key={store.id} store={store} />
+              {brand.Locations.map((loc) => (
+                <LocationCard key={loc.location_id} loc={loc} />
               ))}
             </div>
-          </section>
-        ) : (
-          /* Single store info */
-          <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
-            <h2 className="font-display text-lg font-bold">Info Store</h2>
-            <InfoRow icon={<MapPin className="w-4 h-4" />} label="Alamat">
-              <p className="text-sm">{brand.address}</p>
-              <a
-                href={brand.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-              >
-                <Navigation className="w-3 h-3" /> Navigate
-              </a>
-            </InfoRow>
-
-            <InfoRow icon={<Clock className="w-4 h-4" />} label="Waktu Operasi">
-              <p className="text-sm">{brand.operatingHours}</p>
-            </InfoRow>
-
-            <InfoRow icon={<Phone className="w-4 h-4" />} label="WhatsApp">
-              <a
-                href={`https://wa.me/${brand.contactWhatsApp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:opacity-90 transition-opacity"
-              >
-                <Phone className="w-3 h-3" /> Chat di WhatsApp
-              </a>
-            </InfoRow>
-
-            <InfoRow icon={<Car className="w-4 h-4" />} label="Parking">
-              <p className="text-sm">{brand.parkingInfo}</p>
-            </InfoRow>
           </section>
         )}
 
-        {/* ── Extra brand info ───────────────────────────── */}
-        <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-display text-lg font-bold">Maklumat Lain</h2>
-
-          <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Payment">
-            <div className="flex flex-wrap gap-1.5">
-              {brand.paymentMethods.map((m) => (
-                <span key={m} className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">
-                  {m}
-                </span>
+        {/* ── Products ──────────────────────────────────── */}
+        {brand.Products.length > 0 && (
+          <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <h2 className="font-display text-lg font-bold flex items-center gap-2">
+              <Package className="w-5 h-5" /> Produk
+            </h2>
+            <div className="space-y-3">
+              {brand.Products.map((p) => (
+                <div key={p.product_id}>
+                  <p className="font-medium text-sm">{p.product_type}</p>
+                  {p.product_description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{p.product_description}</p>
+                  )}
+                </div>
               ))}
             </div>
-          </InfoRow>
+          </section>
+        )}
 
-          {brand.muslimFriendly && brand.muslimFriendlyInfo && (
-            <InfoRow icon={<ShieldCheck className="w-4 h-4" />} label="Muslim-Friendly">
-              <p className="text-sm text-primary font-medium">☪ {brand.muslimFriendlyInfo}</p>
-            </InfoRow>
-          )}
+        {/* Last updated */}
+        {lastUpdated && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Calendar className="w-3.5 h-3.5" />
+            Maklumat dikemaskini: {new Date(lastUpdated).toLocaleDateString("ms-MY")}
+          </div>
+        )}
 
-          {brand.onlineStoreUrl && (
-            <InfoRow icon={<ExternalLink className="w-4 h-4" />} label="Online Store">
-              <a
-                href={brand.onlineStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline font-medium"
-              >
-                {brand.onlineStorePlatform || "Visit Store"} <ExternalLink className="w-3 h-3" />
-              </a>
-            </InfoRow>
-          )}
-
-          <InfoRow icon={<Calendar className="w-4 h-4" />} label="Last Verified">
-            <p className="text-xs text-muted-foreground">Last updated: {brand.lastVerified}</p>
-          </InfoRow>
-        </section>
-
-        {/* ── Reviews ────────────────────────────────────── */}
+        {/* ── Reviews placeholder ──────────────────────── */}
         <section>
           <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2">
             <MessageSquarePlus className="w-5 h-5" /> Reviews
@@ -264,16 +281,7 @@ const BrandDetailPage = () => {
             <p className="font-display font-semibold text-foreground">Reviews Coming Soon</p>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
               Nak elak spam dan review palsu — semua reviews akan diverifikasi sebelum publish.
-              Login untuk dapat notifikasi bila feature ni ready!
             </p>
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <button
-                disabled
-                className="px-4 py-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed opacity-60"
-              >
-                Tulis Review
-              </button>
-            </div>
           </div>
         </section>
 

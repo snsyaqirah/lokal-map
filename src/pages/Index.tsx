@@ -1,75 +1,70 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Search, MapPin, Filter, X, Lock } from "lucide-react";
-import { brands, CATEGORIES, CATEGORY_FILTERS } from "@/data/brands";
+import { CATEGORIES } from "@/data/brands";
 import type { Category } from "@/data/brands";
+import { supabase } from "@/lib/supabase";
+import { MALAYSIAN_STATES } from "@/lib/database.types";
+import type { BrandWithDetails } from "@/lib/database.types";
 import BrandCard from "@/components/BrandCard";
 import heroBanner from "@/assets/hero-banner.jpg";
+
+async function fetchAllBrands(): Promise<BrandWithDetails[]> {
+  const { data, error } = await supabase
+    .from("Brand")
+    .select("*, Locations(*), Products(*)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as BrandWithDetails[];
+}
 
 const Index = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
-  const [selectedArea, setSelectedArea] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [muslimFriendlyOnly, setMuslimFriendlyOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const categoryFilters = selectedCategory ? CATEGORY_FILTERS[selectedCategory] : null;
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const toggleGender = (g: string) => {
-    setSelectedGenders((prev) =>
-      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
-    );
-  };
+  const { data: allBrands = [], isLoading } = useQuery({
+    queryKey: ["public-brands"],
+    queryFn: fetchAllBrands,
+  });
 
   const resetFilters = () => {
-    setSelectedTags([]);
-    setSelectedGenders([]);
-    setSelectedArea("");
+    setSelectedState("");
+    setMuslimFriendlyOnly(false);
   };
 
   const handleCategorySelect = (cat: Category) => {
-    if (selectedCategory === cat) {
-      setSelectedCategory(null);
-    } else {
-      setSelectedCategory(cat);
-    }
+    setSelectedCategory((prev) => (prev === cat ? null : cat));
     resetFilters();
     setShowFilters(false);
   };
 
   const filtered = useMemo(() => {
     if (!selectedCategory) return [];
-    return brands.filter((b) => {
-      const matchCategory = b.category === selectedCategory;
+    return allBrands.filter((b) => {
+      const matchCategory = b.brand_category === selectedCategory;
+      const q = search.toLowerCase();
       const matchSearch =
-        !search ||
-        b.name.toLowerCase().includes(search.toLowerCase()) ||
-        b.description.toLowerCase().includes(search.toLowerCase()) ||
-        b.styleTags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-      const matchTags =
-        selectedTags.length === 0 ||
-        selectedTags.some((t) => b.styleTags.includes(t));
-      const matchGender =
-        selectedGenders.length === 0 ||
-        selectedGenders.some((g) => b.genderCategory.includes(g as any));
-      const matchArea = !selectedArea || b.area === selectedArea;
-      return matchCategory && matchSearch && matchTags && matchGender && matchArea;
+        !q ||
+        (b.brand_name ?? "").toLowerCase().includes(q) ||
+        (b.brand_description ?? "").toLowerCase().includes(q) ||
+        b.Products.some((p) => (p.product_type ?? "").toLowerCase().includes(q));
+      const matchState =
+        !selectedState ||
+        b.Locations.some((l) => l.state === selectedState);
+      const matchMuslim =
+        !muslimFriendlyOnly ||
+        b.Locations.some((l) => l.is_muslim_friendly);
+      return matchCategory && matchSearch && matchState && matchMuslim;
     });
-  }, [selectedCategory, search, selectedTags, selectedGenders, selectedArea]);
+  }, [selectedCategory, allBrands, search, selectedState, muslimFriendlyOnly]);
 
-  const hasActiveFilters =
-    selectedTags.length > 0 || selectedGenders.length > 0 || !!selectedArea;
-
-  const activeFilterCount =
-    selectedTags.length + selectedGenders.length + (selectedArea ? 1 : 0);
+  const hasActiveFilters = !!selectedState || muslimFriendlyOnly;
+  const activeFilterCount = (selectedState ? 1 : 0) + (muslimFriendlyOnly ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,15 +78,6 @@ const Index = () => {
         <div className="absolute inset-0 bg-[hsl(var(--hero-overlay)/0.75)]" />
 
         {/* Auth buttons */}
-        <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
-          <button className="px-4 py-2 rounded-xl text-sm font-medium text-primary-foreground border border-primary-foreground/40 hover:bg-primary-foreground/10 transition-colors backdrop-blur-sm">
-            Log In
-          </button>
-          <button className="px-4 py-2 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:opacity-90 transition-opacity">
-            Sign Up
-          </button>
-        </div>
-
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
           <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground mb-4 animate-fade-in-up">
             Lokal-Map
@@ -112,7 +98,7 @@ const Index = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Cari brand, style, atau lokasi..."
+              placeholder="Cari brand, produk, atau lokasi..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-12 pr-4 py-4 rounded-2xl bg-background/95 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent shadow-lg text-base"
@@ -156,7 +142,7 @@ const Index = () => {
           </div>
         </section>
 
-        {selectedCategory && categoryFilters ? (
+        {selectedCategory ? (
           <>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -193,71 +179,53 @@ const Index = () => {
             {showFilters && (
               <div className="mb-8 p-6 rounded-2xl glass-card animate-fade-in space-y-5">
                 <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Style / Niche</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Negeri / Area</h3>
                   <div className="flex flex-wrap gap-2">
-                    {categoryFilters.styleTags.map((tag) => (
+                    {MALAYSIAN_STATES.map((s) => (
                       <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          selectedTags.includes(tag)
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-tag text-tag-foreground hover:bg-primary/10"
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Gender</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {categoryFilters.genderOptions.map((g) => (
-                      <button
-                        key={g}
-                        onClick={() => toggleGender(g)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          selectedGenders.includes(g)
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-tag text-tag-foreground hover:bg-primary/10"
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Area</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {categoryFilters.areas.map((a) => (
-                      <button
-                        key={a}
-                        onClick={() => setSelectedArea(selectedArea === a ? "" : a)}
+                        key={s}
+                        onClick={() => setSelectedState(selectedState === s ? "" : s)}
                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1 ${
-                          selectedArea === a
+                          selectedState === s
                             ? "bg-primary text-primary-foreground"
                             : "bg-tag text-tag-foreground hover:bg-primary/10"
                         }`}
                       >
                         <MapPin className="w-3 h-3" />
-                        {a}
+                        {s}
                       </button>
                     ))}
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setMuslimFriendlyOnly(!muslimFriendlyOnly)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      muslimFriendlyOnly
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-tag text-tag-foreground hover:bg-primary/10"
+                    }`}
+                  >
+                    ☪ Muslim-Friendly sahaja
+                  </button>
+                </div>
               </div>
             )}
 
-            {filtered.length > 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-52 rounded-2xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : filtered.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((brand, i) => (
                   <BrandCard
-                    key={brand.id}
+                    key={brand.brand_id}
                     brand={brand}
                     index={i}
-                    onClick={() => navigate(`/brand/${brand.id}`)}
+                    onClick={() => navigate(`/brand/${brand.brand_id}`)}
                   />
                 ))}
               </div>
