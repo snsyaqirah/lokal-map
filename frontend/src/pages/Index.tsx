@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, SlidersHorizontal, X, Lock, Map } from "lucide-react";
+import { Search, MapPin, SlidersHorizontal, X, Lock, Map, LayoutGrid } from "lucide-react";
 import { CATEGORIES } from "@/data/brands";
 import type { Category } from "@/data/brands";
 import { supabase } from "@/lib/supabase";
@@ -61,9 +61,8 @@ const Index = () => {
   };
 
   const filtered = useMemo(() => {
-    if (!selectedCategory) return [];
     return allBrands.filter((b) => {
-      const matchCategory = b.brand_category === selectedCategory;
+      const matchCategory = !selectedCategory || b.brand_category === selectedCategory;
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -166,6 +165,18 @@ const Index = () => {
         <section className="mb-8">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kategori</p>
           <div className="flex flex-wrap gap-2">
+            {/* All category */}
+            <button
+              onClick={() => updateParams({ category: null, state: null, muslim: null, gender: null, storeType: null, filters: null })}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                !selectedCategory
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-card hover:border-primary/50 hover:bg-muted/40"
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Semua
+            </button>
             {CATEGORIES.map(({ id, label, emoji, available }) =>
               available ? (
                 <button
@@ -196,10 +207,9 @@ const Index = () => {
           </div>
         </section>
 
-        {selectedCategory ? (
-          <>
-            {/* Results header */}
-            <div className="flex items-center justify-between mb-4">
+        <>
+          {/* Results header */}
+          <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold">
                   {isLoading ? "Loading..." : `${filtered.length} brand`}
@@ -346,11 +356,7 @@ const Index = () => {
               </div>
             )}
           </>
-        ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">Pilih kategori di atas untuk lihat brand</p>
-          </div>
-        )}
+
       </main>
 
       <footer className="border-t border-border py-5 mt-8">

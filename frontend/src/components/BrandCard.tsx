@@ -1,4 +1,3 @@
-import { MapPin } from "lucide-react";
 import type { BrandWithDetails } from "@/lib/database.types";
 
 interface BrandCardProps {
@@ -17,13 +16,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
-  const primaryLocation = brand.Locations[0];
-  const locationLabel = [primaryLocation?.city, primaryLocation?.state]
-    .filter(Boolean)
-    .join(", ");
   const isMuslimFriendly = brand.Locations.some((l) => l.is_muslim_friendly);
-  const hasOnline = brand.Online && brand.Online.length > 0;
-  const hasPhysical = brand.Locations.length > 0;
   const productTypes = [
     ...new Set(brand.Products.map((p) => p.product_type).filter(Boolean)),
   ] as string[];
@@ -47,14 +40,6 @@ const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
             <h3 className="font-display text-base font-semibold leading-tight group-hover:text-primary transition-colors truncate">
               {brand.brand_name}
             </h3>
-            {locationLabel ? (
-              <div className="flex items-center gap-1 text-muted-foreground text-xs mt-0.5">
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{locationLabel}</span>
-              </div>
-            ) : hasOnline ? (
-              <span className="text-xs text-muted-foreground mt-0.5">Online only</span>
-            ) : null}
           </div>
             <div className="flex items-center gap-1 shrink-0">
             {brand.price_range && (
@@ -95,23 +80,13 @@ const BrandCard = ({ brand, index, onClick }: BrandCardProps) => {
         )}
 
         {/* Footer badges */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-border/60">
-          {hasPhysical && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-              Physical
-            </span>
-          )}
-          {hasOnline && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-              Online
-            </span>
-          )}
-          {isMuslimFriendly && (
+        {isMuslimFriendly && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-border/60">
             <span className="text-[11px] px-2 py-0.5 rounded-full border border-primary/30 text-primary">
               Muslim-Friendly
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </button>
   );

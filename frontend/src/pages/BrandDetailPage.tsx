@@ -253,7 +253,7 @@ function SocialLink({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/40 transition-colors group"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/40 transition-colors group min-w-0 overflow-hidden"
     >
       <LinkIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
       <div className="min-w-0 flex-1">
@@ -482,10 +482,10 @@ const BrandDetailPage = () => {
               <span
                 title={
                   brand.price_range === "$"
-                    ? "RM0 – 99.99"
+                    ? "RM0 – 150"
                     : brand.price_range === "$$"
-                    ? "RM100 – 199.99"
-                    : "RM200+"
+                    ? "RM150 – 250"
+                    : "RM250+"
                 }
                 className="text-[11px] px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-semibold cursor-help"
               >
