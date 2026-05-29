@@ -93,6 +93,7 @@ export const MALAYSIAN_STATES = [
   "Pulau Pinang",
   "Selangor",
   "Kuala Lumpur",
+  "Putrajaya",
   "Terengganu",
   "Sabah",
   "Sarawak",
